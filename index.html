@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Financiero Personal</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 50%, #fecfef 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b9d, #c44569);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        .logo {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 30px;
+            background: linear-gradient(135deg, #ffeef8, #f8e8ff);
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .card .amount {
+            font-size: 2rem;
+            font-weight: 600;
+            color: #2c3e50;
+        }
+
+        .income { border-left: 4px solid #ff6b9d; }
+        .expenses { border-left: 4px solid #f8b500; }
+        .savings { border-left: 4px solid #ff9ff3; }
+        .balance { border-left: 4px solid #f368e0; }
+
+        .main-content {
+            padding: 30px;
+        }
+
+        .tabs {
+            display: flex;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #ecf0f1;
+        }
+
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            font-size: 1rem;
+            font-weight: 500;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            color: #c44569;
+            border-bottom: 3px solid #ff6b9d;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .section-header h2 {
+            color: #c44569;
+            font-size: 1.5rem;
+        }
+
+        .add-btn {
+            background: linear-gradient(135deg, #ff6b9d, #f368e0);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 157, 0.3);
+        }
+
+        .add-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 157, 0.4);
+        }
+
+        .table-container {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            margin-bottom: 30px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th {
+            background: linear-gradient(135deg, #c44569, #8e44ad);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .editable {
+            background: none;
+            border: none;
+            padding: 5px;
+            width: 100%;
+            font-size: 0.9rem;
+        }
+
+        .editable:focus {
+            outline: 2px solid #ff6b9d;
+            border-radius: 4px;
+        }
+
+        .delete-btn {
+            background: linear-gradient(135deg, #ff6b9d, #c44569);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(255, 107, 157, 0.3);
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .chart-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+        }
+
+        .chart-box h3 {
+            color: #c44569;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .insights {
+            background: linear-gradient(135deg, #ff9a9e, #f093fb);
+            color: white;
+            padding: 25px;
+            border-radius: 12px;
+            margin-bottom: 30px;
+        }
+
+        .insights h3 {
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .insight-item {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            backdrop-filter: blur(10px);
+        }
+
+        .amount-positive {
+            color: #ff6b9d;
+            font-weight: 600;
+        }
+
+        .amount-negative {
+            color: #f8b500;
+            font-weight: 600;
+        }
+
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .summary-cards {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+                padding: 20px;
+            }
+            
+            .main-content {
+                padding: 20px;
+            }
+            
+            .tabs {
+                flex-wrap: wrap;
+            }
+            
+            .tab {
+                padding: 10px 15px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+    <!-- Logo -->
+    <div class="logo">
+        <img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTIv9duIv4Idmdv-2FPuAVlxTWdvKrJmkXJyMEMikrF_kO3KpRbj5yN-fNHYYt_Z1xKXSo&usqp=CAU" 
+             alt="Logo Dashboard" 
+             style="width:100%; height:100%; object-fit:contain; border-radius:12px;">
+    </div>
+
+    <!-- Título -->
+    <h1>Dashboard Financiero Personal</h1>
+</div>
+
+        <div class="summary-cards">
+            <div class="card income">
+                <h3>Ingresos Totales</h3>
+                <div class="amount" id="totalIncome">$0</div>
+            </div>
+            <div class="card expenses">
+                <h3>Gastos Totales</h3>
+                <div class="amount" id="totalExpenses">$0</div>
+            </div>
+            <div class="card savings">
+                <h3>Ahorros</h3>
+                <div class="amount" id="totalSavings">$0</div>
+            </div>
+            <div class="card balance">
+                <h3>Balance</h3>
+                <div class="amount" id="balance">$0</div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="tabs">
+                <button class="tab active" onclick="showTab('income')">💵 Ingresos</button>
+                <button class="tab" onclick="showTab('expenses')">💳 Gastos</button>
+                <button class="tab" onclick="showTab('savings')">🏦 Ahorros</button>
+                <button class="tab" onclick="showTab('analytics')">📊 Análisis</button>
+            </div>
+
+            <!-- Pestaña de Ingresos -->
+            <div id="income" class="tab-content active">
+                <div class="section-header">
+                    <h2>Gestión de Ingresos</h2>
+                    <button class="add-btn" onclick="addIncomeRow()">+ Agregar Ingreso</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incomeTable">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña de Gastos -->
+            <div id="expenses" class="tab-content">
+                <div class="section-header">
+                    <h2>Gestión de Gastos</h2>
+                    <button class="add-btn" onclick="addExpenseRow()">+ Agregar Gasto</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Descripción</th>
+                                <th>Categoría</th>
+                                <th>Tipo</th>
+                                <th>Monto</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expensesTable">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña de Ahorros -->
+            <div id="savings" class="tab-content">
+                <div class="section-header">
+                    <h2>Gestión de Ahorros</h2>
+                    <button class="add-btn" onclick="addSavingRow()">+ Agregar Ahorro</button>
+                </div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Meta/Objetivo</th>
+                                <th>Monto Ahorrado</th>
+                                <th>Meta Total</th>
+                                <th>Fecha</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="savingsTable">
+                            <!-- Los datos se cargarán dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Pestaña de Análisis -->
+            <div id="analytics" class="tab-content">
+                <div class="insights">
+                    <h3>🔍 Insights Financieros</h3>
+                    <div id="insightsContainer">
+                        <!-- Los insights se generarán dinámicamente -->
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <div class="chart-box">
+                        <h3>Distribución de Gastos</h3>
+                        <canvas id="expensesChart"></canvas>
+                    </div>
+                    <div class="chart-box">
+                        <h3>Ingresos vs Gastos</h3>
+                        <canvas id="incomeExpensesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Datos de la aplicación
+        let data = {
+            income: [],
+            expenses: [],
+            savings: []
+        };
+
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSampleData();
+            updateSummary();
+            updateCharts();
+            generateInsights();
+        });
+
+        // Cargar datos de ejemplo
+        function loadSampleData() {
+            data.income = [
+                { id: 1, description: 'Salario', type: 'Fijo', amount: 5000, date: '2024-01-01' },
+                { id: 2, description: 'Freelance', type: 'Variable', amount: 1200, date: '2024-01-15' }
+            ];
+            
+            data.expenses = [
+                { id: 1, description: 'Alquiler', category: 'Vivienda', type: 'Fijo', amount: 1500, date: '2024-01-01' },
+                { id: 2, description: 'Electricidad', category: 'Servicios', type: 'Fijo', amount: 200, date: '2024-01-05' },
+                { id: 3, description: 'Supermercado', category: 'Alimentación', type: 'Variable', amount: 800, date: '2024-01-10' }
+            ];
+            
+            data.savings = [
+                { id: 1, goal: 'Vacaciones', saved: 2000, target: 5000, date: '2024-01-01' },
+                { id: 2, goal: 'Emergencia', saved: 3000, target: 10000, date: '2024-01-01' }
+            ];
+            
+            renderTables();
+        }
+
+        // Función para mostrar pestañas
+        function showTab(tabName) {
+            // Ocultar todas las pestañas
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Mostrar la pestaña seleccionada
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+            
+            if (tabName === 'analytics') {
+                setTimeout(() => {
+                    updateCharts();
+                    generateInsights();
+                }, 100);
+            }
+        }
+
+        // Renderizar tablas
+        function renderTables() {
+            renderIncomeTable();
+            renderExpensesTable();
+            renderSavingsTable();
+        }
+
+        // Renderizar tabla de ingresos
+        function renderIncomeTable() {
+            const tbody = document.getElementById('incomeTable');
+            tbody.innerHTML = '';
+            
+            data.income.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="text" class="editable" value="${item.description}" onchange="updateIncome(${item.id}, 'description', this.value)"></td>
+                    <td>
+                        <select class="editable" onchange="updateIncome(${item.id}, 'type', this.value)">
+                            <option value="Fijo" ${item.type === 'Fijo' ? 'selected' : ''}>Fijo</option>
+                            <option value="Variable" ${item.type === 'Variable' ? 'selected' : ''}>Variable</option>
+                        </select>
+                    </td>
+                    <td><input type="number" class="editable" value="${item.amount}" onchange="updateIncome(${item.id}, 'amount', parseFloat(this.value))"></td>
+                    <td><input type="date" class="editable" value="${item.date}" onchange="updateIncome(${item.id}, 'date', this.value)"></td>
+                    <td><button class="delete-btn" onclick="deleteIncome(${item.id})">Eliminar</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Renderizar tabla de gastos
+        function renderExpensesTable() {
+            const tbody = document.getElementById('expensesTable');
+            tbody.innerHTML = '';
+            
+            data.expenses.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="text" class="editable" value="${item.description}" onchange="updateExpense(${item.id}, 'description', this.value)"></td>
+                    <td>
+                        <select class="editable" onchange="updateExpense(${item.id}, 'category', this.value)">
+                            <option value="Vivienda" ${item.category === 'Vivienda' ? 'selected' : ''}>Vivienda</option>
+                            <option value="Alimentación" ${item.category === 'Alimentación' ? 'selected' : ''}>Alimentación</option>
+                            <option value="Transporte" ${item.category === 'Transporte' ? 'selected' : ''}>Transporte</option>
+                            <option value="Servicios" ${item.category === 'Servicios' ? 'selected' : ''}>Servicios</option>
+                            <option value="Entretenimiento" ${item.category === 'Entretenimiento' ? 'selected' : ''}>Entretenimiento</option>
+                            <option value="Otros" ${item.category === 'Otros' ? 'selected' : ''}>Otros</option>
+                        </select>
+                    </td>
+                    <td>
+                        <select class="editable" onchange="updateExpense(${item.id}, 'type', this.value)">
+                            <option value="Fijo" ${item.type === 'Fijo' ? 'selected' : ''}>Fijo</option>
+                            <option value="Variable" ${item.type === 'Variable' ? 'selected' : ''}>Variable</option>
+                        </select>
+                    </td>
+                    <td><input type="number" class="editable" value="${item.amount}" onchange="updateExpense(${item.id}, 'amount', parseFloat(this.value))"></td>
+                    <td><input type="date" class="editable" value="${item.date}" onchange="updateExpense(${item.id}, 'date', this.value)"></td>
+                    <td><button class="delete-btn" onclick="deleteExpense(${item.id})">Eliminar</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Renderizar tabla de ahorros
+        function renderSavingsTable() {
+            const tbody = document.getElementById('savingsTable');
+            tbody.innerHTML = '';
+            
+            data.savings.forEach(item => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td><input type="text" class="editable" value="${item.goal}" onchange="updateSaving(${item.id}, 'goal', this.value)"></td>
+                    <td><input type="number" class="editable" value="${item.saved}" onchange="updateSaving(${item.id}, 'saved', parseFloat(this.value))"></td>
+                    <td><input type="number" class="editable" value="${item.target}" onchange="updateSaving(${item.id}, 'target', parseFloat(this.value))"></td>
+                    <td><input type="date" class="editable" value="${item.date}" onchange="updateSaving(${item.id}, 'date', this.value)"></td>
+                    <td><button class="delete-btn" onclick="deleteSaving(${item.id})">Eliminar</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Funciones para agregar nuevas filas
+        function addIncomeRow() {
+            const newId = Math.max(...data.income.map(i => i.id), 0) + 1;
+            data.income.push({
+                id: newId,
+                description: '',
+                type: 'Fijo',
+                amount: 0,
+                date: new Date().toISOString().split('T')[0]
+            });
+            renderIncomeTable();
+            updateSummary();
+        }
+
+        function addExpenseRow() {
+            const newId = Math.max(...data.expenses.map(i => i.id), 0) + 1;
+            data.expenses.push({
+                id: newId,
+                description: '',
+                category: 'Otros',
+                type: 'Variable',
+                amount: 0,
+                date: new Date().toISOString().split('T')[0]
+            });
+            renderExpensesTable();
+            updateSummary();
+        }
+
+        function addSavingRow() {
+            const newId = Math.max(...data.savings.map(i => i.id), 0) + 1;
+            data.savings.push({
+                id: newId,
+                goal: '',
+                saved: 0,
+                target: 0,
+                date: new Date().toISOString().split('T')[0]
+            });
+            renderSavingsTable();
+            updateSummary();
+        }
+
+        // Funciones para actualizar datos
+        function updateIncome(id, field, value) {
+            const item = data.income.find(i => i.id === id);
+            if (item) {
+                item[field] = value;
+                updateSummary();
+                updateCharts();
+                generateInsights();
+            }
+        }
+
+        function updateExpense(id, field, value) {
+            const item = data.expenses.find(i => i.id === id);
+            if (item) {
+                item[field] = value;
+                updateSummary();
+                updateCharts();
+                generateInsights();
+            }
+        }
+
+        function updateSaving(id, field, value) {
+            const item = data.savings.find(i => i.id === id);
+            if (item) {
+                item[field] = value;
+                updateSummary();
+                generateInsights();
+            }
+        }
+
+        // Funciones para eliminar datos
+        function deleteIncome(id) {
+            data.income = data.income.filter(i => i.id !== id);
+            renderIncomeTable();
+            updateSummary();
+            updateCharts();
+            generateInsights();
+        }
+
+        function deleteExpense(id) {
+            data.expenses = data.expenses.filter(i => i.id !== id);
+            renderExpensesTable();
+            updateSummary();
+            updateCharts();
+            generateInsights();
+        }
+
+        function deleteSaving(id) {
+            data.savings = data.savings.filter(i => i.id !== id);
+            renderSavingsTable();
+            updateSummary();
+            generateInsights();
+        }
+
+        // Actualizar resumen
+        function updateSummary() {
+            const totalIncome = data.income.reduce((sum, item) => sum + (item.amount || 0), 0);
+            const totalExpenses = data.expenses.reduce((sum, item) => sum + (item.amount || 0), 0);
+            const totalSavings = data.savings.reduce((sum, item) => sum + (item.saved || 0), 0);
+            const balance = totalIncome - totalExpenses;
+
+            document.getElementById('totalIncome').textContent = `S/ ${totalIncome.toFixed(2)}`;
+            document.getElementById('totalExpenses').textContent = `S/ ${totalExpenses.toFixed(2)}`;
+            document.getElementById('totalSavings').textContent = `S/ ${totalSavings.toFixed(2)}`;
+            document.getElementById('balance').textContent = `S/ ${balance.toFixed(2)}`;
+            document.getElementById('balance').className = `amount ${balance >= 0 ? 'amount-positive' : 'amount-negative'}`;
+        }
+
+        // Actualizar gráficos
+        function updateCharts() {
+            updateExpensesChart();
+            updateIncomeExpensesChart();
+        }
+
+        let expensesChart, incomeExpensesChart;
+
+        function updateExpensesChart() {
+            const ctx = document.getElementById('expensesChart').getContext('2d');
+            
+            if (expensesChart) {
+                expensesChart.destroy();
+            }
+
+            const categories = {};
+            data.expenses.forEach(expense => {
+                categories[expense.category] = (categories[expense.category] || 0) + (expense.amount || 0);
+            });
+
+            expensesChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categories),
+                    datasets: [{
+                        data: Object.values(categories),
+                        backgroundColor: [
+                            '#ff6b9d',
+                            '#f093fb',
+                            '#ff9a9e',
+                            '#ffeef8',
+                            '#f368e0',
+                            '#c44569'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateIncomeExpensesChart() {
+            const ctx = document.getElementById('incomeExpensesChart').getContext('2d');
+            
+            if (incomeExpensesChart) {
+                incomeExpensesChart.destroy();
+            }
+
+            const totalIncome = data.income.reduce((sum, item) => sum + (item.amount || 0), 0);
+            const totalExpenses = data.expenses.reduce((sum, item) => sum + (item.amount || 0), 0);
+
+            incomeExpensesChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Ingresos', 'Gastos'],
+                    datasets: [{
+                        label: 'Monto (S/)',
+                        data: [totalIncome, totalExpenses],
+                        backgroundColor: [
+                            '#ff6b9d',
+                            '#f8b500'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+
+        // Generar insights
+        function generateInsights() {
+            const container = document.getElementById('insightsContainer');
+            const insights = [];
+
+            const totalIncome = data.income.reduce((sum, item) => sum + (item.amount || 0), 0);
+            const totalExpenses = data.expenses.reduce((sum, item) => sum + (item.amount || 0), 0);
+            const balance = totalIncome - totalExpenses;
+            const savingsRate = totalIncome > 0 ? ((balance / totalIncome) * 100) : 0;
+
+            // Insight de tasa de ahorro
+            if (savingsRate > 20) {
+                insights.push(`🎉 ¡Excelente! Tu tasa de ahorro es del ${savingsRate.toFixed(1)}%. Estás en el camino correcto.`);
+            } else if (savingsRate > 0) {
+                insights.push(`📈 Tu tasa de ahorro es del ${savingsRate.toFixed(1)}%. Considera aumentarla al 20% para mejorar tu salud financiera.`);
+            } else {
+                insights.push(`⚠️ Estás gastando más de lo que ingresas. Es importante revisar tus gastos.`);
+            }
+
+            // Insight de categoría de mayor gasto
+            const categoryTotals = {};
+            data.expenses.forEach(expense => {
+                categoryTotals[expense.category] = (categoryTotals[expense.category] || 0) + (expense.amount || 0);
+            });
+            
+            const maxCategory = Object.entries(categoryTotals).reduce((a, b) => a[1] > b[1] ? a : b, ['', 0]);
+            if (maxCategory[0]) {
+                const percentage = ((maxCategory[1] / totalExpenses) * 100);
+                insights.push(`💰 Tu mayor gasto es en ${maxCategory[0]} (S/ ${maxCategory[1].toFixed(2)}), representando el ${percentage.toFixed(1)}% de tus gastos.`);
+            }
+
+            // Insight de metas de ahorro
+            const savingsProgress = data.savings.map(saving => ({
+                goal: saving.goal,
+                progress: ((saving.saved / saving.target) * 100).toFixed(1)
+            }));
+            
+            savingsProgress.forEach(saving => {
+                if (saving.progress >= 100) {
+                    insights.push(`🏆 ¡Felicitaciones! Has completado tu meta de ${saving.goal}.`);
+                } else if (saving.progress >= 75) {
+                    insights.push(`🎯 Estás muy cerca de completar tu meta de ${saving.goal} (${saving.progress}%).`);
+                }
+            });
+
+            container.innerHTML = insights.map(insight => 
+                `<div class="insight-item">${insight}</div>`
+            ).join('');
+        }
+    </script>
+</body>
+</html>
